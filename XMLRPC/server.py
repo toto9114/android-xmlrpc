@@ -8,22 +8,41 @@ server = SimpleXMLRPCServer(("localhost", 8888))
 # published as XML-RPC methods
 class MyFuncs:
 	def add(self, x, y): 
-		return x + y
+		print
+		print "input x=%s, y=%s" % (str(x), str(y))
+		sum = x + y
+		print "output", sum
+		print
+		return sum
 	def addOneDay(self, now):
 		now = datetime.datetime.strptime(str(now), "%Y%m%dT%H:%M:%S")
-		return now + datetime.timedelta(1)
+		print
+		print "input date", now
+		now += datetime.timedelta(1)
+		print "output date", now
+		print
+		return now
 	def getHostName(self, android):
 		host = socket.gethostname()
 		return "android: " + android + "\nhost: " + host
 	def testStruct(self, map):
+		print
+		print "input map", map
 		map["Temperature"] = 24
+		print "output map", map
+		print
 		return map
 	def testArray(self, inArray):
+		print
+		print "input array", inArray
 		sum = 0
 		for i in inArray:
 			sum += i
+		outArray = [sum, len(inArray)]
 		# could also return [sum, len(inArray)]
-		return sum, len(inArray)
+		print "output array", outArray
+		print
+		return outArray
 	def desaturateImage(self, img):
 		arr = array.array('I', img.data)
 		i = 0
@@ -55,6 +74,9 @@ class MyFuncs:
 		arr.append([1,2,3])
 		arr.append([4,5,6])
 		arr.append([{"x": 1, "y":0, "z":0},8,9])
+		print
+		print "output", arr
+		print
 		return arr
 
     
