@@ -110,7 +110,7 @@ public class Test extends Activity {
 
 		tests = (ListView) findViewById(R.id.tests);
 		ArrayAdapter<String> adapter = new TestAdapter(this, R.layout.test, R.id.title);
-		adapter.add("add 3 to 3.6;in [int, float] out float");
+		adapter.add("add 3 to 3.6;in [int, float] out double");
 		adapter.add("1 day from now;in/out Date");
 		adapter.add("test string;in/out String");
 		adapter.add("test struct;in/out Map");
