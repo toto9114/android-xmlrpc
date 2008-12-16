@@ -13,6 +13,7 @@ import org.apache.http.conn.HttpHostConnectException;
 import org.xmlrpc.android.XMLRPCClient;
 import org.xmlrpc.android.XMLRPCException;
 import org.xmlrpc.android.XMLRPCFault;
+import org.xmlrpc.android.XMLRPCSerializable;
 
 import android.app.Activity;
 import android.content.Context;
@@ -119,6 +120,7 @@ public class Test extends Activity {
 		adapter.add("invert random bool;in/out boolean");
 		adapter.add("get huge string");
 		adapter.add("get complex 2D array");
+		adapter.add("use of XMLRPCSerializable object");
 		tests.setAdapter(adapter);
 		tests.setOnItemClickListener(testListener);
 	}
@@ -284,9 +286,45 @@ public class Test extends Activity {
 					}
 				});
 				method.call();
+			} else
+			if (position == 9) {
+		        XMLRPCMethod method = new XMLRPCMethod("getCountry", new XMLRPCMethodCallback() {
+					public void callFinished(Object result) {
+						testResult.setText(result.toString());
+					}
+		        });
+		        Person person;
+		        double r = Math.random();
+		        if (r < 1/3.0) {
+		        	person = new Person("John", "Smith");
+		        } else
+		        if (r < 2/3.0) {
+		        	person = new Person("Hans", "Muller");
+		        } else {
+		        	person = new Person("Pablo", "Gonzales");
+		        }
+		        Object[] params = {
+		        		person,
+		        };
+		        method.call(params);
 			}
 		}
 	};
+	
+	class Person implements XMLRPCSerializable {
+		private String firstName;
+		private String lastName;
+		public Person(String firstName, String lastName) {
+			this.firstName = firstName;
+			this.lastName = lastName;
+		}
+		public Object getSerializable() {
+			Map<String, String> map = new HashMap<String, String>();
+			map.put("firstName", firstName);
+			map.put("lastName", lastName);
+			return map;
+		}
+	}
 	
 	class TestAdapter extends ArrayAdapter<String> {
 		private LayoutInflater layouter;

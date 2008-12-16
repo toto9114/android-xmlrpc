@@ -6,6 +6,7 @@
     android:layout_height="fill_parent"
 	android:orientation="vertical"
     android:padding="2dip"
+    android:background="@drawable/back"
 >
 	<TextView
 	    android:layout_width="fill_parent"
@@ -33,5 +34,6 @@
 	    android:id="@+id/tests"
 	    android:layout_marginTop="4dip"
 	    android:divider="@android:color/transparent"
+	    android:cacheColorHint="@android:color/transparent"
 	/>
 </LinearLayout>

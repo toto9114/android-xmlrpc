@@ -37,7 +37,7 @@ class XMLRPCSerializer {
 	
 	static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd'T'HH:mm:ss");
 
-	static void serialize(XmlSerializer serializer, Object object ) throws IOException {
+	static void serialize(XmlSerializer serializer, Object object) throws IOException {
 		// check for scalar types:
 		if (object instanceof Integer || object instanceof Short || object instanceof Byte) {
 			serializer.startTag(null, TYPE_I4).text(object.toString()).endTag(null, TYPE_I4);
@@ -104,6 +104,10 @@ class XMLRPCSerializer {
 				serializer.endTag(null, TAG_MEMBER);
 			}
 			serializer.endTag(null, TYPE_STRUCT);
+		} else
+		if (object instanceof XMLRPCSerializable) {
+			XMLRPCSerializable serializable = (XMLRPCSerializable) object;
+			serialize(serializer, serializable.getSerializable());
 		} else {
 			throw new IOException("Cannot serialize " + object);
 		}

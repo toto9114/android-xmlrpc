@@ -78,6 +78,17 @@ class MyFuncs:
 		print "output", arr
 		print
 		return arr
+	def getCountry(self, person):
+		firstName = person["firstName"]
+		lastName = person["lastName"]
+		location = firstName + " " + lastName + " lives in "
+		if firstName == "John" and lastName == "Smith":
+			location += "USA"
+		elif firstName == "Hans" and lastName == "Muller":
+			location += "Germany"
+		else:
+			location += "Spain"
+		return location
 
     
 server.register_instance(MyFuncs())
