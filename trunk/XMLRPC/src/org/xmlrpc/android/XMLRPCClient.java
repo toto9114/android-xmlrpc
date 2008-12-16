@@ -22,7 +22,6 @@ import org.xmlpull.v1.XmlSerializer;
 
 import android.util.Xml;
 
-
 /**
  * XMLRPCClient allows to call remote XMLRPC method.
  * 
@@ -63,6 +62,10 @@ import android.util.Xml;
  * </tr>
  * </tbody>
  * </table>
+ * </p>
+ * <p>
+ * You can also pass as a parameter any object implementing XMLRPCSerializable interface. In this
+ * case your object overrides getSerializable() telling how to serialize to XMLRPC protocol
  * </p>
  */
 
