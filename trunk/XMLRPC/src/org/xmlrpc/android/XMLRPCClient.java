@@ -83,6 +83,7 @@ public class XMLRPCClient {
 	private HttpPost postMethod;
 	private XmlSerializer serializer;
 	private HttpParams httpParams;
+	private IXMLRPCSerializer iXMLRPCSerializer;
 
 	/**
 	 * XMLRPCClient constructor. Creates new instance based on server URI
@@ -100,6 +101,7 @@ public class XMLRPCClient {
 		
 		client = new DefaultHttpClient();
 		serializer = Xml.newSerializer();
+		iXMLRPCSerializer = new XMLRPCSerializer();
 	}
 	
 	/**
@@ -118,6 +120,16 @@ public class XMLRPCClient {
 		this(URI.create(url.toExternalForm()));
 	}
 
+	/**
+	 * Sets custom IXMLRPCSerializer serializer (in case when server doesn't support
+	 * standard XMLRPC protocol)
+	 * 
+	 * @param serializer custom serializer
+	 */
+	public void setSerializer(IXMLRPCSerializer serializer) {
+		iXMLRPCSerializer = serializer;
+	}
+	
 	/**
 	 * Call method with optional parameters. This is general method.
 	 * If you want to call your method with 0-8 parameters, you can use more
@@ -141,9 +153,9 @@ public class XMLRPCClient {
 				// set method params
 				serializer.startTag(null, TAG_PARAMS);
 				for (int i=0; i<params.length; i++) {
-					serializer.startTag(null, TAG_PARAM).startTag(null, XMLRPCSerializer.TAG_VALUE);
-					XMLRPCSerializer.serialize(serializer, params[i]);
-					serializer.endTag(null, XMLRPCSerializer.TAG_VALUE).endTag(null, TAG_PARAM);
+					serializer.startTag(null, TAG_PARAM).startTag(null, IXMLRPCSerializer.TAG_VALUE);
+					iXMLRPCSerializer.serialize(serializer, params[i]);
+					serializer.endTag(null, IXMLRPCSerializer.TAG_VALUE).endTag(null, TAG_PARAM);
 				}
 				serializer.endTag(null, TAG_PARAMS);
 			}
@@ -185,7 +197,7 @@ public class XMLRPCClient {
 				// no parser.require() here since its called in XMLRPCSerializer.deserialize() below
 				
 				// deserialize result
-				Object obj = XMLRPCSerializer.deserialize(pullParser);
+				Object obj = iXMLRPCSerializer.deserialize(pullParser);
 				entity.consumeContent();
 				return obj;
 			} else
@@ -195,7 +207,7 @@ public class XMLRPCClient {
 				// no parser.require() here since its called in XMLRPCSerializer.deserialize() below
 
 				// deserialize fault result
-				Map<String, Object> map = (Map<String, Object>) XMLRPCSerializer.deserialize(pullParser);
+				Map<String, Object> map = (Map<String, Object>) iXMLRPCSerializer.deserialize(pullParser);
 				String faultString = (String) map.get(TAG_FAULT_STRING);
 				int faultCode = (Integer) map.get(TAG_FAULT_CODE);
 				entity.consumeContent();

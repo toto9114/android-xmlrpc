@@ -18,26 +18,10 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlSerializer;
 
-class XMLRPCSerializer {
-	static final String TAG_NAME = "name";
-	static final String TAG_MEMBER = "member";
-	static final String TAG_VALUE = "value";
-	static final String TAG_DATA = "data";
+class XMLRPCSerializer implements IXMLRPCSerializer {
+	static SimpleDateFormat dateFormat = new SimpleDateFormat(DATETIME_FORMAT);
 
-	static final String TYPE_INT = "int";
-	static final String TYPE_I4 = "i4";
-	static final String TYPE_I8 = "i8";
-	static final String TYPE_DOUBLE = "double";
-	static final String TYPE_BOOLEAN = "boolean";
-	static final String TYPE_STRING = "string";
-	static final String TYPE_DATE_TIME_ISO8601 = "dateTime.iso8601";
-	static final String TYPE_BASE64 = "base64";
-	static final String TYPE_ARRAY = "array";
-	static final String TYPE_STRUCT = "struct";
-	
-	static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd'T'HH:mm:ss");
-
-	static void serialize(XmlSerializer serializer, Object object) throws IOException {
+	public void serialize(XmlSerializer serializer, Object object) throws IOException {
 		// check for scalar types:
 		if (object instanceof Integer || object instanceof Short || object instanceof Byte) {
 			serializer.startTag(null, TYPE_I4).text(object.toString()).endTag(null, TYPE_I4);
@@ -113,7 +97,7 @@ class XMLRPCSerializer {
 		}
 	}
 	
-	static Object deserialize(XmlPullParser parser) throws XmlPullParserException, IOException {
+	public Object deserialize(XmlPullParser parser) throws XmlPullParserException, IOException {
 		parser.require(XmlPullParser.START_TAG, null, TAG_VALUE);
 
 		parser.nextTag(); 
