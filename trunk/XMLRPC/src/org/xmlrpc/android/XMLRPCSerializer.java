@@ -99,91 +99,101 @@ class XMLRPCSerializer implements IXMLRPCSerializer {
 	
 	public Object deserialize(XmlPullParser parser) throws XmlPullParserException, IOException {
 		parser.require(XmlPullParser.START_TAG, null, TAG_VALUE);
-
-		parser.nextTag(); 
-		String typeNodeName = parser.getName();
-		
 		Object obj;
-		if (typeNodeName.equals(TYPE_INT) || typeNodeName.equals(TYPE_I4)) {
-			String value = parser.nextText();
-			obj = Integer.parseInt(value);
-		} else
-		if (typeNodeName.equals(TYPE_I8)) {
-			String value = parser.nextText();
-			obj = Long.parseLong(value);
-		} else
-		if (typeNodeName.equals(TYPE_DOUBLE)) {
-			String value = parser.nextText();
-			obj = Double.parseDouble(value);
-		} else
-		if (typeNodeName.equals(TYPE_BOOLEAN)) {
-			String value = parser.nextText();
-			obj = value.equals("1") ? Boolean.TRUE : Boolean.FALSE;
-		} else
-		if (typeNodeName.equals(TYPE_STRING)) {
-			obj = parser.nextText();
-		} else
-		if (typeNodeName.equals(TYPE_DATE_TIME_ISO8601)) {
-			String value = parser.nextText();
-			try {
-				obj = dateFormat.parseObject(value);
-			} catch (ParseException e) {
-				throw new IOException("Cannot deserialize dateTime " + value); 
-			}
-		} else
-		if (typeNodeName.equals(TYPE_BASE64)) {
-			String value = parser.nextText();
-			BufferedReader reader = new BufferedReader(new StringReader(value));
-			String line;
-			StringBuffer sb = new StringBuffer();
-			while ((line = reader.readLine()) != null) {
-				sb.append(line);
-			}
-			obj = Base64Coder.decode(sb.toString());
-		} else
-		if (typeNodeName.equals(TYPE_ARRAY)) {
-			parser.nextTag(); // TAG_DATA (<data>)
-			parser.require(XmlPullParser.START_TAG, null, TAG_DATA);
+		boolean isTag = true;
 
+		try {
 			parser.nextTag();
-			List<Object> list = new ArrayList<Object>();
-			while (parser.getName().equals(TAG_VALUE)) {
-				list.add(deserialize(parser));
+		} catch (XmlPullParserException e) {
+			isTag = false;
+		}
+		if (isTag) {
+			String typeNodeName = parser.getName();
+			
+			if (typeNodeName.equals(TYPE_INT) || typeNodeName.equals(TYPE_I4)) {
+				String value = parser.nextText();
+				obj = Integer.parseInt(value);
+			} else
+			if (typeNodeName.equals(TYPE_I8)) {
+				String value = parser.nextText();
+				obj = Long.parseLong(value);
+			} else
+			if (typeNodeName.equals(TYPE_DOUBLE)) {
+				String value = parser.nextText();
+				obj = Double.parseDouble(value);
+			} else
+			if (typeNodeName.equals(TYPE_BOOLEAN)) {
+				String value = parser.nextText();
+				obj = value.equals("1") ? Boolean.TRUE : Boolean.FALSE;
+			} else
+			if (typeNodeName.equals(TYPE_STRING)) {
+				obj = parser.nextText();
+			} else
+			if (typeNodeName.equals(TYPE_DATE_TIME_ISO8601)) {
+				String value = parser.nextText();
+				try {
+					obj = dateFormat.parseObject(value);
+				} catch (ParseException e) {
+					throw new IOException("Cannot deserialize dateTime " + value); 
+				}
+			} else
+			if (typeNodeName.equals(TYPE_BASE64)) {
+				String value = parser.nextText();
+				BufferedReader reader = new BufferedReader(new StringReader(value));
+				String line;
+				StringBuffer sb = new StringBuffer();
+				while ((line = reader.readLine()) != null) {
+					sb.append(line);
+				}
+				obj = Base64Coder.decode(sb.toString());
+			} else
+			if (typeNodeName.equals(TYPE_ARRAY)) {
+				parser.nextTag(); // TAG_DATA (<data>)
+				parser.require(XmlPullParser.START_TAG, null, TAG_DATA);
+	
 				parser.nextTag();
-			}
-			parser.require(XmlPullParser.END_TAG, null, TAG_DATA);
-			parser.nextTag(); // TAG_ARRAY (</array>)
-			parser.require(XmlPullParser.END_TAG, null, TYPE_ARRAY);
-			obj = list.toArray();
-		} else
-		if (typeNodeName.equals(TYPE_STRUCT)) {
-			parser.nextTag();
-			Map<String, Object> map = new HashMap<String, Object>();
-			while (parser.getName().equals(TAG_MEMBER)) {
-				String memberName = null;
-				Object memberValue = null;
-				while (true) {
+				List<Object> list = new ArrayList<Object>();
+				while (parser.getName().equals(TAG_VALUE)) {
+					list.add(deserialize(parser));
 					parser.nextTag();
-					String name = parser.getName();
-					if (name.equals(TAG_NAME)) {
-						memberName = parser.nextText();
-					} else
-					if (name.equals(TAG_VALUE)) {
-						memberValue = deserialize(parser);
-					} else {
-						break;
-					}
 				}
-				if (memberName != null && memberValue != null) {
-					map.put(memberName, memberValue);
-				}
-				parser.require(XmlPullParser.END_TAG, null, TAG_MEMBER);
+				parser.require(XmlPullParser.END_TAG, null, TAG_DATA);
+				parser.nextTag(); // TAG_ARRAY (</array>)
+				parser.require(XmlPullParser.END_TAG, null, TYPE_ARRAY);
+				obj = list.toArray();
+			} else
+			if (typeNodeName.equals(TYPE_STRUCT)) {
 				parser.nextTag();
+				Map<String, Object> map = new HashMap<String, Object>();
+				while (parser.getName().equals(TAG_MEMBER)) {
+					String memberName = null;
+					Object memberValue = null;
+					while (true) {
+						parser.nextTag();
+						String name = parser.getName();
+						if (name.equals(TAG_NAME)) {
+							memberName = parser.nextText();
+						} else
+						if (name.equals(TAG_VALUE)) {
+							memberValue = deserialize(parser);
+						} else {
+							break;
+						}
+					}
+					if (memberName != null && memberValue != null) {
+						map.put(memberName, memberValue);
+					}
+					parser.require(XmlPullParser.END_TAG, null, TAG_MEMBER);
+					parser.nextTag();
+				}
+				parser.require(XmlPullParser.END_TAG, null, TYPE_STRUCT);
+				obj = map;
+			} else {
+				throw new IOException("Cannot deserialize " + parser.getName());
 			}
-			parser.require(XmlPullParser.END_TAG, null, TYPE_STRUCT);
-			obj = map;
 		} else {
-			throw new IOException("Cannot deserialize " + parser.getName());
+			// TYPE_STRING (<string>) is not required
+			obj = parser.getText();
 		}
 		parser.nextTag(); // TAG_VALUE (</value>)
 		parser.require(XmlPullParser.END_TAG, null, TAG_VALUE);
