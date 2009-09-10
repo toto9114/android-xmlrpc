@@ -1,7 +1,9 @@
 package org.xmlrpc.android;
 
+import java.io.BufferedInputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.URL;
@@ -180,7 +182,9 @@ public class XMLRPCClient {
 			// setup pull parser
 			XmlPullParser pullParser = XmlPullParserFactory.newInstance().newPullParser();
 			entity = response.getEntity();
-			Reader reader = new InputStreamReader(entity.getContent());
+			Reader reader = new InputStreamReader(new BufferedInputStream(entity.getContent()));
+// for testing purposes only
+// reader = new StringReader("<?xml version='1.0'?><methodResponse><params><param><value>\n\n\n</value></param></params></methodResponse>");
 			pullParser.setInput(reader);
 			
 			// lets start pulling...
