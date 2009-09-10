@@ -99,17 +99,26 @@ class XMLRPCSerializer implements IXMLRPCSerializer {
 	
 	public Object deserialize(XmlPullParser parser) throws XmlPullParserException, IOException {
 		parser.require(XmlPullParser.START_TAG, null, TAG_VALUE);
-		Object obj;
-		boolean isTag = true;
 
+		if (parser.isEmptyElementTag()) {
+			// degenerated <value />, return empty string
+			return "";
+		}
+		
+		Object obj;
+		boolean hasType = true;
+		String typeNodeName = null;
 		try {
 			parser.nextTag();
+			typeNodeName = parser.getName();
+			if (typeNodeName.equals(TAG_VALUE) && parser.getEventType() == XmlPullParser.END_TAG) {
+				// empty <value></value>, return empty string
+				return "";
+			}
 		} catch (XmlPullParserException e) {
-			isTag = false;
+			hasType = false;
 		}
-		if (isTag) {
-			String typeNodeName = parser.getName();
-			
+		if (hasType) {
 			if (typeNodeName.equals(TYPE_INT) || typeNodeName.equals(TYPE_I4)) {
 				String value = parser.nextText();
 				obj = Integer.parseInt(value);
