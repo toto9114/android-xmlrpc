@@ -1,9 +1,9 @@
 package org.xmlrpc.android;
 
 import java.io.BufferedInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.URL;
@@ -20,9 +20,6 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
-import org.xmlpull.v1.XmlSerializer;
-
-import android.util.Xml;
 
 /**
  * XMLRPCClient allows to call remote XMLRPC method.
@@ -71,21 +68,10 @@ import android.util.Xml;
  * </p>
  */
 
-public class XMLRPCClient {
-	private static final String TAG_METHOD_CALL = "methodCall";
-	private static final String TAG_METHOD_NAME = "methodName";
-	private static final String TAG_METHOD_RESPONSE = "methodResponse";
-	private static final String TAG_PARAMS = "params";
-	private static final String TAG_PARAM = "param";
-	private static final String TAG_FAULT = "fault";
-	private static final String TAG_FAULT_CODE = "faultCode";
-	private static final String TAG_FAULT_STRING = "faultString";
-
+public class XMLRPCClient extends XMLRPCCommon {
 	private HttpClient client;
 	private HttpPost postMethod;
-	private XmlSerializer serializer;
 	private HttpParams httpParams;
-	private IXMLRPCSerializer iXMLRPCSerializer;
 
 	/**
 	 * XMLRPCClient constructor. Creates new instance based on server URI
@@ -100,10 +86,7 @@ public class XMLRPCClient {
 		// two second delay between sending http POST request and POST body 
 		httpParams = postMethod.getParams();
 		HttpProtocolParams.setUseExpectContinue(httpParams, false);
-		
 		client = new DefaultHttpClient();
-		serializer = Xml.newSerializer();
-		iXMLRPCSerializer = new XMLRPCSerializer();
 	}
 	
 	/**
@@ -123,16 +106,6 @@ public class XMLRPCClient {
 	}
 
 	/**
-	 * Sets custom IXMLRPCSerializer serializer (in case when server doesn't support
-	 * standard XMLRPC protocol)
-	 * 
-	 * @param serializer custom serializer
-	 */
-	public void setSerializer(IXMLRPCSerializer serializer) {
-		iXMLRPCSerializer = serializer;
-	}
-	
-	/**
 	 * Call method with optional parameters. This is general method.
 	 * If you want to call your method with 0-8 parameters, you can use more
 	 * convenience call() methods
@@ -142,37 +115,24 @@ public class XMLRPCClient {
 	 * @return deserialized method return value
 	 * @throws XMLRPCException
 	 */
+	@SuppressWarnings("unchecked")
 	public Object callEx(String method, Object[] params) throws XMLRPCException {
 		try {
 			// prepare POST body
-			StringWriter bodyWriter = new StringWriter();
-			serializer.setOutput(bodyWriter);
-			serializer.startDocument(null, null);
-			serializer.startTag(null, TAG_METHOD_CALL);
-			// set method name
-			serializer.startTag(null, TAG_METHOD_NAME).text(method).endTag(null, TAG_METHOD_NAME);
-			if (params != null && params.length != 0) {
-				// set method params
-				serializer.startTag(null, TAG_PARAMS);
-				for (int i=0; i<params.length; i++) {
-					serializer.startTag(null, TAG_PARAM).startTag(null, IXMLRPCSerializer.TAG_VALUE);
-					iXMLRPCSerializer.serialize(serializer, params[i]);
-					serializer.endTag(null, IXMLRPCSerializer.TAG_VALUE).endTag(null, TAG_PARAM);
-				}
-				serializer.endTag(null, TAG_PARAMS);
-			}
-			serializer.endTag(null, TAG_METHOD_CALL);
-			serializer.endDocument();
+			String body = methodCall(method, params);
 
 			// set POST body
-			HttpEntity entity = new StringEntity(bodyWriter.toString());
+			HttpEntity entity = new StringEntity(body);
 			postMethod.setEntity(entity);
-			
+
+			//Log.d(Tag.LOG, "ros HTTP POST");
 			// execute HTTP POST request
 			HttpResponse response = client.execute(postMethod);
+			//Log.d(Tag.LOG, "ros HTTP POSTed");
 
 			// check status code
 			int statusCode = response.getStatusLine().getStatusCode();
+			//Log.d(Tag.LOG, "ros status code:" + statusCode);
 			if (statusCode != HttpStatus.SC_OK) {
 				throw new XMLRPCException("HTTP status code: " + statusCode + " != " + HttpStatus.SC_OK);
 			}
@@ -189,15 +149,15 @@ public class XMLRPCClient {
 			
 			// lets start pulling...
 			pullParser.nextTag();
-			pullParser.require(XmlPullParser.START_TAG, null, TAG_METHOD_RESPONSE);
+			pullParser.require(XmlPullParser.START_TAG, null, Tag.METHOD_RESPONSE);
 			
-			pullParser.nextTag(); // either TAG_PARAMS (<params>) or TAG_FAULT (<fault>)  
+			pullParser.nextTag(); // either Tag.PARAMS (<params>) or Tag.FAULT (<fault>)  
 			String tag = pullParser.getName();
-			if (tag.equals(TAG_PARAMS)) {
+			if (tag.equals(Tag.PARAMS)) {
 				// normal response
-				pullParser.nextTag(); // TAG_PARAM (<param>)
-				pullParser.require(XmlPullParser.START_TAG, null, TAG_PARAM);
-				pullParser.nextTag(); // TAG_VALUE (<value>)
+				pullParser.nextTag(); // Tag.PARAM (<param>)
+				pullParser.require(XmlPullParser.START_TAG, null, Tag.PARAM);
+				pullParser.nextTag(); // Tag.VALUE (<value>)
 				// no parser.require() here since its called in XMLRPCSerializer.deserialize() below
 				
 				// deserialize result
@@ -205,15 +165,15 @@ public class XMLRPCClient {
 				entity.consumeContent();
 				return obj;
 			} else
-			if (tag.equals(TAG_FAULT)) {
+			if (tag.equals(Tag.FAULT)) {
 				// fault response
-				pullParser.nextTag(); // TAG_VALUE (<value>)
+				pullParser.nextTag(); // Tag.VALUE (<value>)
 				// no parser.require() here since its called in XMLRPCSerializer.deserialize() below
 
 				// deserialize fault result
 				Map<String, Object> map = (Map<String, Object>) iXMLRPCSerializer.deserialize(pullParser);
-				String faultString = (String) map.get(TAG_FAULT_STRING);
-				int faultCode = (Integer) map.get(TAG_FAULT_CODE);
+				String faultString = (String) map.get(Tag.FAULT_STRING);
+				int faultCode = (Integer) map.get(Tag.FAULT_CODE);
 				entity.consumeContent();
 				throw new XMLRPCFault(faultString, faultCode);
 			} else {
@@ -224,11 +184,29 @@ public class XMLRPCClient {
 			// catch & propagate XMLRPCException/XMLRPCFault
 			throw e;
 		} catch (Exception e) {
+			e.printStackTrace();
 			// wrap any other Exception(s) around XMLRPCException
 			throw new XMLRPCException(e);
 		}
 	}
 	
+	private String methodCall(String method, Object[] params)
+	throws IllegalArgumentException, IllegalStateException, IOException {
+		StringWriter bodyWriter = new StringWriter();
+		serializer.setOutput(bodyWriter);
+		serializer.startDocument(null, null);
+		serializer.startTag(null, Tag.METHOD_CALL);
+		// set method name
+		serializer.startTag(null, Tag.METHOD_NAME).text(method).endTag(null, Tag.METHOD_NAME);
+		
+		serializeParams(params);
+
+		serializer.endTag(null, Tag.METHOD_CALL);
+		serializer.endDocument();
+
+		return bodyWriter.toString();
+	}
+
 	/**
 	 * Convenience method call with no parameters
 	 * 
