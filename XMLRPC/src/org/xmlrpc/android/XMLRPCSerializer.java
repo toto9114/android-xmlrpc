@@ -18,9 +18,12 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlSerializer;
 
+//import android.util.Log;
+
 class XMLRPCSerializer implements IXMLRPCSerializer {
 	static SimpleDateFormat dateFormat = new SimpleDateFormat(DATETIME_FORMAT);
 
+	@SuppressWarnings("unchecked")
 	public void serialize(XmlSerializer serializer, Object object) throws IOException {
 		// check for scalar types:
 		if (object instanceof Integer || object instanceof Short || object instanceof Byte) {
