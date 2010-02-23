@@ -12,6 +12,8 @@ import java.util.Map;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -96,13 +98,59 @@ public class XMLRPCClient extends XMLRPCCommon {
 	public XMLRPCClient(String url) {
 		this(URI.create(url));
 	}
-	
+
 	/**
 	 * Convenience XMLRPCClient constructor. Creates new instance based on server URL
 	 * @param XMLRPC server URL
 	 */
 	public XMLRPCClient(URL url) {
 		this(URI.create(url.toExternalForm()));
+	}
+
+	/**
+	 * Convenience constructor. Creates new instance based on server String address
+	 * @param XMLRPC server address
+	 * @param HTTP Server - Basic Authentication - Username
+	 * @param HTTP Server - Basic Authentication - Password
+	 */	
+	public XMLRPCClient(URI uri, String username, String password) {
+        this(uri);
+        
+        ((DefaultHttpClient) client).getCredentialsProvider().setCredentials(
+        new AuthScope(uri.getHost(), uri.getPort(),AuthScope.ANY_REALM),
+        new UsernamePasswordCredentials(username, password));
+    }
+
+	/**
+	 * Convenience constructor. Creates new instance based on server String address
+	 * @param XMLRPC server address
+	 * @param HTTP Server - Basic Authentication - Username
+	 * @param HTTP Server - Basic Authentication - Password
+	 */
+	public XMLRPCClient(String url, String username, String password) {
+		this(URI.create(url), username, password);
+	}
+
+	/**
+	 * Convenience constructor. Creates new instance based on server String address
+	 * @param XMLRPC server url
+	 * @param HTTP Server - Basic Authentication - Username
+	 * @param HTTP Server - Basic Authentication - Password
+	 */
+	public XMLRPCClient(URL url, String username, String password) {
+		this(URI.create(url.toExternalForm()), username, password);
+	}
+
+	/**
+	 * Sets basic authentication on web request using plain credentials
+	 * @param username The plain text username
+	 * @param password The plain text password
+	 */
+	public void setBasicAuthentication(String username, String password) {
+		((DefaultHttpClient) client).getCredentialsProvider().setCredentials(
+		        new AuthScope(postMethod.getURI().getHost(), postMethod.getURI().getPort(),
+AuthScope.ANY_REALM),
+		        new UsernamePasswordCredentials(username, password));
 	}
 
 	/**
