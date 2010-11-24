@@ -80,8 +80,11 @@ public class XMLRPCClient extends XMLRPCCommon {
 	private HttpClient client;
 	private HttpPost postMethod;
 	private HttpParams httpParams;
-
-
+	// These variables used in the code inspired by erickok in issue #6 
+	private boolean httpPreAuth = false;
+	private String username = "";
+	private String password = "";
+		
 	/**
 	 * XMLRPCClient constructor. Creates new instance based on server URI
 	 * (Code contributed by sgayda2 from issue #17, and by erickok from ticket #10)
@@ -234,14 +237,28 @@ public class XMLRPCClient extends XMLRPCCommon {
 	 * Sets basic authentication on web request using plain credentials
 	 * @param username The plain text username
 	 * @param password The plain text password
+	 * @param doPreemptiveAuth Select here whether to authenticate without it being requested first by the server.  
 	 */
-	public void setBasicAuthentication(String username, String password) {
-		((DefaultHttpClient) client).getCredentialsProvider().setCredentials(
-		        new AuthScope(postMethod.getURI().getHost(), postMethod.getURI().getPort(),
-AuthScope.ANY_REALM),
-		        new UsernamePasswordCredentials(username, password));
+	public void setBasicAuthentication(String username, String password, boolean doPreemptiveAuth) {
+		// This code required to trigger the patch created by erickok in issue #6 
+		if(doPreemptiveAuth = true) {
+			this.httpPreAuth = doPreemptiveAuth;
+			this.username = username;
+			this.password = password;
+		} else {
+			((DefaultHttpClient) client).getCredentialsProvider().setCredentials(new AuthScope(postMethod.getURI().getHost(), postMethod.getURI().getPort(), AuthScope.ANY_REALM), new UsernamePasswordCredentials(username, password));
+		}
 	}
 
+	/**
+	 * Convenience Constructor: Sets basic authentication on web request using plain credentials
+	 * @param username The plain text username
+	 * @param password The plain text password
+	 */
+	public void setBasicAuthentication(String username, String password) {
+		setBasicAuthentication(username, password, false);
+	}
+	
 	/**
 	 * Call method with optional parameters. This is general method.
 	 * If you want to call your method with 0-8 parameters, you can use more
@@ -262,6 +279,15 @@ AuthScope.ANY_REALM),
 			HttpEntity entity = new StringEntity(body);
 			postMethod.setEntity(entity);
 
+			// This code slightly tweaked from the code by erickok in issue #6
+			// Force preemptive authentication
+			// This makes sure there is an 'Authentication: ' header being send before trying and failing and retrying 
+			// by the basic authentication mechanism of DefaultHttpClient
+			if(this.httpPreAuth == true) {
+				String auth = this.username + ":" + this.password;
+				postMethod.addHeader("Authorization", "Basic " + Base64Coder.encode(auth.getBytes()).toString());
+			}
+			
 			//Log.d(Tag.LOG, "ros HTTP POST");
 			// execute HTTP POST request
 			HttpResponse response = client.execute(postMethod);
