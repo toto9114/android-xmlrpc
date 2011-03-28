@@ -128,6 +128,17 @@ public class XMLRPCClient extends XMLRPCCommon {
 	}
 
 	/**
+	 * Amends user agent
+	 * (Code contributed by mortenholdflod from issue #28)
+	 * 
+	 * @param userAgent defining the new User Agent string
+	 */
+	public void setUserAgent(String userAgent) {
+		postMethod.removeHeaders("User-Agent");
+		postMethod.addHeader("User-Agent", userAgent);
+	}
+	
+	/**
 	 * Convenience constructor. Creates new instance based on server String address
 	 * @param XMLRPC server address
 	 */
