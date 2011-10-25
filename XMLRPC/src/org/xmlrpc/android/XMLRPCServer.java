@@ -65,21 +65,15 @@ public class XMLRPCServer extends XMLRPCCommon {
 		return methodCall;
 	}
 	
-	XmlPullParser xmlPullParserFromSocket(InputStream socketInputStream) throws IOException, XmlPullParserException {
-	
-		String line, xmlRpcText = "";
-		BufferedReader br = new BufferedReader(new InputStreamReader(socketInputStream));
-		while ((line = br.readLine()) != null && line.length() > 0); // eat the HTTP POST headers
-		while (br.ready())
-			xmlRpcText = xmlRpcText + br.readLine();
-		// Log.d(Tag.LOG, "xml received:" + xmlRpcText);
-		
-		InputStream inputStream = new ByteArrayInputStream(xmlRpcText.getBytes("UTF-8"));
-		XmlPullParser pullParser = XmlPullParserFactory.newInstance().newPullParser();
-		Reader streamReader = new InputStreamReader(inputStream);
-		pullParser.setInput(streamReader);
-		return pullParser;
-	}
+    XmlPullParser xmlPullParserFromSocket(InputStream socketInputStream) throws IOException, XmlPullParserException {
+        String line;
+        BufferedReader br = new BufferedReader(new InputStreamReader(socketInputStream));
+        while ((line = br.readLine()) != null && line.length() > 0); // eat the HTTP POST headers
+        
+        XmlPullParser pullParser = XmlPullParserFactory.newInstance().newPullParser();
+        pullParser.setInput(br);
+        return pullParser;
+    }
 	
 	public void respond(Socket socket, Object[] params) throws IOException {
 
