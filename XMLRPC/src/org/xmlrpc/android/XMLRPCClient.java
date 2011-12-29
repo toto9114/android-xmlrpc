@@ -307,9 +307,9 @@ public class XMLRPCClient extends XMLRPCCommon {
 			// check status code
 			int statusCode = response.getStatusLine().getStatusCode();
 			//Log.d(Tag.LOG, "ros status code:" + statusCode);
-			if (statusCode != HttpStatus.SC_OK) {
-				throw new XMLRPCException("HTTP status code: " + statusCode + " != " + HttpStatus.SC_OK);
-			}
+            if (statusCode != HttpStatus.SC_OK) {
+                throw new XMLRPCException("HTTP status code: " + statusCode + " != " + HttpStatus.SC_OK, statusCode);
+            }
 
 			// parse response stuff
 			//
